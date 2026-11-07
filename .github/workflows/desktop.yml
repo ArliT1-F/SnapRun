@@ -1,0 +1,49 @@
+name: Build desktop packages
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: Deployed first-party HTTPS SnapRun origin
+        required: true
+        type: string
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+            bundles: apps/desktop/src-tauri/target/release/bundle/{deb,rpm,appimage}/*
+          - os: windows-latest
+            platform: win32
+            bundles: apps/desktop/src-tauri/target/release/bundle/{nsis,msi}/*
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: apps/desktop/src-tauri -> target }
+      - name: Install Linux native dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf rpm
+      - run: npm ci
+      - name: Package signed-origin desktop shell
+        shell: bash
+        run: node scripts/desktop-build.mjs "$PLATFORM"
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          DESKTOP_APP_URL: ${{ inputs.app_url || vars.SNAPRUN_APP_URL }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snaprun-${{ matrix.platform }}
+          path: ${{ matrix.bundles }}
+          if-no-files-found: error
