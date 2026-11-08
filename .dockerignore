@@ -1,0 +1,11 @@
+.git
+node_modules
+**/node_modules
+**/dist
+.data
+.env
+.env.*
+apps/desktop/src-tauri/target
+apps/desktop/src-tauri/gen
+coverage
+docs/screenshots

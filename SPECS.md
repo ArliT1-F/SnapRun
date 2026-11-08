@@ -200,7 +200,7 @@ The application must distinguish between:
 
 Display understandable error messages.
 
-Implement:
+Do not implement (security boundary):
 
 * Device identifier spoofing.
 * Device fingerprint manipulation.
@@ -211,7 +211,9 @@ Implement:
 * Automated account creation.
 
 
-Check: “etrnkz/snapchat-unofficial-api⁠“ on GitHub for more info.
+Research reference only: “etrnkz/snapchat-unofficial-api” was reviewed on GitHub and rejected as a dependency. See docs/INTEGRATION_REPORT.md.
+
+Implementation note: the original draft said “Implement” for this list, contradicting the official-access and security requirements. SnapRun treats every item above as prohibited; none is implemented.
 
 8. Synchronization
 
