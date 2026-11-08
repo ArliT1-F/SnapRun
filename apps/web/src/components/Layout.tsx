@@ -258,6 +258,15 @@ export function Layout() {
                     : 'Local workspace'}
             <span className="footer-separator">·</span>
             {isDesktop() ? 'Desktop' : 'Web app'}
+            {settings.privacy.enabled && (
+              <>
+                <span className="footer-separator">·</span>
+                <span className="privacy-mode-indicator">
+                  <ShieldCheck size={12} />
+                  Privacy Mode
+                </span>
+              </>
+            )}
           </span>
           <span>
             Made for your space, not your data.<span className="footer-version">v0.1.0</span>

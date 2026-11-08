@@ -7,9 +7,9 @@ Date: **2026-11-07** (UTC). Environment: Node.js 22.22.3, npm 10.9.8, Linux sand
 | Strict TypeScript checks across workspaces         | Passed                                                                                         |
 | Backend API/security tests                         | 20 passed                                                                                      |
 | Authenticated WebSocket test                       | 1 passed                                                                                       |
-| Frontend provider/shortcut tests                   | 6 passed                                                                                       |
-| Shared schema/capability tests                     | 4 passed                                                                                       |
-| Total automated unit/integration tests             | **31 passed**                                                                                  |
+| Frontend provider/shortcut/privacy tests           | 8 passed                                                                                       |
+| Shared schema/capability/privacy tests             | 6 passed                                                                                       |
+| Total automated unit/integration tests             | **35 passed**                                                                                  |
 | Production web bundle                              | Passed                                                                                         |
 | Production server bundle                           | Passed                                                                                         |
 | `npm audit`                                        | **0 reported vulnerabilities** at verification time                                            |
@@ -22,7 +22,7 @@ Date: **2026-11-07** (UTC). Environment: Node.js 22.22.3, npm 10.9.8, Linux sand
 | Docker image build                                 | **Not run:** no Docker daemon in sandbox                                                       |
 | Live Snapchat login/registration                   | **Not automated or claimed:** official external handoff tested with `window.open` interception |
 
-The browser smoke covers both sign-in and registration handoffs, guest contacts, companion registration, labels, theme persistence, encrypted account-backed contact persistence, notification read state, official handoff URL, self-reported status, command search and mobile navigation. Its temporary account is deleted afterward.
+The browser smoke covers both sign-in and registration handoffs, guest contacts, companion registration, labels, theme persistence, encrypted account-backed contact persistence, Privacy Mode local-cache removal, one-click local wipe with guest reset, notification read state, official handoff URL, self-reported status, command search and mobile navigation. Its temporary account is deleted afterward.
 
 The compiled Node server was run with `SERVE_WEB=true` and the persistent development PGlite database to verify the actual built assets and same-origin API, not only the Vite development server.
 

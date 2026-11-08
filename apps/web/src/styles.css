@@ -3681,3 +3681,121 @@ select {
   margin: -5px 0 17px;
   font-size: 10px;
 }
+
+.privacy-mode-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 22px;
+  margin: 18px 0;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.privacy-mode-card.enabled {
+  border-color: rgba(123, 168, 116, 0.45);
+  background: linear-gradient(135deg, rgba(123, 168, 116, 0.1), var(--surface) 55%);
+}
+.privacy-mode-card h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.privacy-mode-card p {
+  margin: 9px 0 0;
+  max-width: 620px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+.privacy-mode-card .fine-print {
+  font-size: 11px;
+}
+.privacy-audit {
+  margin: 22px 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.privacy-audit .card-title {
+  margin-bottom: 4px;
+}
+.privacy-audit .card-title h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.audit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.audit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 12px;
+}
+.audit-row > span:first-child {
+  color: var(--muted);
+}
+.audit-inventory {
+  border-top: 1px solid var(--border);
+}
+.audit-inventory details {
+  border-bottom: 1px solid var(--border);
+}
+.audit-inventory summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 2px;
+  cursor: pointer;
+  font-size: 12.5px;
+  list-style: none;
+}
+.audit-inventory summary::-webkit-details-marker {
+  display: none;
+}
+.audit-inventory summary::after {
+  content: '+';
+  color: var(--muted);
+  font-size: 15px;
+}
+.audit-inventory details[open] summary::after {
+  content: '−';
+}
+.audit-inventory p {
+  margin: 0;
+  padding: 0 2px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.privacy-mode-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #9ab88c;
+}
+[data-theme='light'] .privacy-mode-indicator {
+  color: #5f7a52;
+}
+@media (max-width: 720px) {
+  .privacy-mode-card {
+    padding: 18px;
+  }
+  .audit-grid {
+    grid-template-columns: 1fr;
+  }
+  .audit-row {
+    flex-wrap: wrap;
+  }
+}

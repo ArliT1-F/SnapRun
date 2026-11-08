@@ -39,8 +39,17 @@ Trust boundaries:
 - Authentication tags are verified on decryption; tampering tests pass.
 - Production requires a 32-byte key supplied as 64 hex characters. Development keys are generated locally and ignored by Git.
 - Companion session hashes and password hashes are excluded from data export and synchronization.
-- Desktop preference cache excludes contacts, labels, passwords and tokens.
+- Desktop preference cache excludes contacts, labels, passwords and tokens. Privacy Mode clears/disables that cache and removes the browser `snaprun.preferences` cache.
 - Guest contacts remain in memory and disappear when the page session ends; they are not silently merged into a new account.
+
+### Privacy Mode
+
+- Settings include a Privacy Mode master switch, notification redaction control, local-data wipe and a data/permissions audit.
+- System/lock-screen notifications can be redacted to a generic SnapRun update; Privacy Mode forces redaction on.
+- One-click local wipe removes only SnapRun-owned browser storage, clears the desktop preference cache, attempts server logout, resets the workspace to a session-only guest and leaves Privacy Mode enabled in memory.
+- If logout cannot reach the server, the local wipe still runs, but the HttpOnly session cookie cannot be revoked client-side; the UI tells the user to reconnect and sign out again.
+- The audit states that SnapRun does not collect device identifiers, hardware fingerprints, analytics, camera/microphone/location data or Snapchat credentials/messages. It also discloses that standard HTTP metadata still reaches the host and that Snapchat sees the real device.
+- Privacy Mode is data minimization, not anonymity or device impersonation. It does not bypass Snapchat device checks, locks or restrictions.
 
 ### Integration integrity
 

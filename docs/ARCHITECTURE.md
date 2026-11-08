@@ -25,7 +25,7 @@ There are three deliberately separate domains:
 
 1. **Snapchat account data** — credentials, friends, conversations and security checks remain in Snapchat’s official interface.
 2. **Companion account data** — email, display name, password hash, sessions, manually entered contacts, labels, preferences and companion events.
-3. **Guest session data** — contacts/events in browser memory; non-sensitive appearance preferences in localStorage. Guest data is not silently uploaded on login.
+3. **Guest session data** — contacts/events in browser memory; non-sensitive appearance preferences in localStorage unless Privacy Mode disables local caching. Guest data is not silently uploaded on login.
 
 The server never receives a Snapchat password or token. The official-web provider returns `outcome: opened, verified: false`. A user may save a self-reported signed-in note, but the API and UI never turn that into verified access.
 
@@ -46,7 +46,7 @@ The React workspace loads `/api/bootstrap` after session discovery. Settings cha
 
 Authenticated `/api/sync` WebSockets carry small invalidation hints (`settings`, `contacts`, `notifications`, `connection`), not private payloads. Clients refetch authoritative REST data. A client identifier suppresses redundant echoes. Reconnect uses bounded exponential backoff; REST remains usable when WebSockets fail.
 
-Synchronized data includes theme, language, shortcut preferences, notification preferences, desktop behavior, labels, manually maintained contacts and connection notes. Passwords, session tokens and Snapchat data are never synchronization payloads.
+Synchronized data includes theme, language, shortcut preferences, notification preferences, privacy preferences, desktop behavior, labels, manually maintained contacts and connection notes. Passwords, session tokens and Snapchat data are never synchronization payloads. Privacy Mode removes local preference caches, forces notification redaction and exposes a local-wipe action plus data/permissions audit in Settings.
 
 Deleting a label also removes its references from encrypted contacts in the same database transaction.
 

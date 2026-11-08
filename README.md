@@ -42,6 +42,7 @@ For a same-origin deployment set `SERVE_WEB=true`; the Node service then serves 
 - AES-256-GCM application-layer encryption for account contacts and preference/activity payloads.
 - PostgreSQL schema/migrations, REST validation, rate limits, origin checks and authenticated WebSocket sync.
 - Companion-only notification history and browser/native notification preferences.
+- Privacy Mode: local-cache minimization, redacted system notifications, one-click local wipe and an in-app data/permissions audit.
 - Tauri 2 tray, native notifications, global shortcut, autostart and non-sensitive preference cache.
 
 ## Commands

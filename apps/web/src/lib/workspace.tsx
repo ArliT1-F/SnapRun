@@ -9,7 +9,9 @@ import {
 } from 'react';
 import {
   defaultSettings,
+  effectiveNotificationRedaction,
   initialConnection,
+  localPreferencePersistence,
   mergeSettings,
   type AppNotification,
   type ConnectionState,
@@ -21,7 +23,13 @@ import {
   type WorkspaceData,
 } from '@snaprun/shared';
 import { api, ApiError, clientId, errorMessage } from './api';
-import { cacheDesktopSettings, desktopNotify } from './platform';
+import {
+  applyDesktopBehavior,
+  cacheDesktopSettings,
+  clearDesktopPreferencesCache,
+  desktopNotify,
+} from './platform';
+import { wipeBrowserCompanionData } from './privacy';
 import { snapchatProvider } from '../integrations/snapchat/OfficialWebProvider';
 import type { HandoffPurpose } from '../integrations/snapchat/types';
 
@@ -50,6 +58,7 @@ type WorkspaceContextValue = {
   ) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: (password: string) => Promise<void>;
+  wipeThisDevice: () => Promise<void>;
   refresh: () => Promise<void>;
   saveContact: (input: ContactInput, id?: string) => Promise<void>;
   deleteContact: (id: string) => Promise<void>;
@@ -102,7 +111,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     settingsRef.current = next;
     setSettings(next);
     try {
-      localStorage.setItem('snaprun.preferences', JSON.stringify(next));
+      if (localPreferencePersistence(next))
+        localStorage.setItem('snaprun.preferences', JSON.stringify(next));
+      else localStorage.removeItem('snaprun.preferences');
     } catch {
       /* Nonessential appearance cache. */
     }
@@ -310,6 +321,36 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     },
     [reset, notify],
   );
+  const wipeThisDevice = useCallback(async () => {
+    writeGeneration.current += 1;
+    await queue.current.catch(() => undefined);
+    let signedOut = true;
+    if (userRef.current) {
+      try {
+        await api('/auth/logout', { method: 'POST', body: {} });
+      } catch {
+        signedOut = false;
+      }
+    }
+    wipeBrowserCompanionData();
+    await clearDesktopPreferencesCache().catch(() => false);
+    const next: Settings = {
+      ...structuredClone(defaultSettings),
+      privacy: { enabled: true, redactNotifications: true },
+    };
+    reset();
+    applySettings(next);
+    setAuthMode(null);
+    setHandoffPurpose(null);
+    await applyDesktopBehavior(next).catch(() => undefined);
+    if (signedOut)
+      notify('Local SnapRun data wiped. You’re now in a session-only guest workspace.', 'info');
+    else
+      notify(
+        'Local data cleared, but the server session could not be revoked. Reconnect and sign out again.',
+        'error',
+      );
+  }, [reset, notify, applySettings]);
   const saveContact = useCallback(
     async (input: ContactInput, id?: string) => {
       if (userRef.current) {
@@ -358,6 +399,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         void desktopNotify(
           'SnapRun · Contact saved',
           'Your local contact list has been updated.',
+          effectiveNotificationRedaction(settingsRef.current),
         ).catch(() => undefined);
     },
     [notify],
@@ -415,7 +457,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           settingsRef.current.notifications.desktop &&
           settingsRef.current.notifications.onHandoff
         )
-          void desktopNotify('SnapRun · Snapchat opened', body).catch(() => undefined);
+          void desktopNotify(
+            'SnapRun · Snapchat opened',
+            body,
+            effectiveNotificationRedaction(settingsRef.current),
+          ).catch(() => undefined);
       } catch (error) {
         notify(errorMessage(error), 'error');
         throw error;
@@ -478,6 +524,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         authenticate,
         logout,
         deleteAccount,
+        wipeThisDevice,
         refresh,
         saveContact,
         deleteContact,

@@ -28,7 +28,8 @@ Coverage includes:
 - export exclusions, password-confirmed deletion and cascading cleanup;
 - authenticated WebSocket upgrade, invalidation hints and anonymous rejection;
 - provider URL restrictions, blocked-pop-up handling and keyboard modifiers;
-- nested unknown-field rejection and local contact search.
+- nested unknown-field rejection and local contact search;
+- legacy settings compatibility for new privacy defaults, Privacy Mode protection derivation, notification redaction and selective SnapRun-only storage wiping.
 
 ## Browser smoke test
 
@@ -45,7 +46,7 @@ For an existing Chromium binary:
 CHROMIUM_PATH=/path/to/chromium npm run test:browser
 ```
 
-`BASE_URL` defaults to `http://127.0.0.1:5173`. The script creates a unique companion account and deletes it in `finally`. It exercises guest contacts, onboarding without a Snapchat password field, registration, labels, theme persistence, account-backed contact persistence, notification read state, official handoff, self-reported status, command search and mobile overflow. It intercepts `window.open` so tests do not authenticate to or automate Snapchat.
+`BASE_URL` defaults to `http://127.0.0.1:5173`. The script creates a unique companion account and deletes it in `finally`. It exercises guest contacts, onboarding without a Snapchat password field, registration, labels, theme persistence, account-backed contact persistence, Privacy Mode cache removal, local wipe/guest reset, notification read state, official handoff, self-reported status, command search and mobile overflow. It intercepts `window.open` so tests do not authenticate to or automate Snapchat.
 
 ## Native tests still required
 
@@ -53,8 +54,9 @@ The Tauri source, icons, capability files and platform CI workflow are delivered
 
 - Build and install Linux DEB/RPM/AppImage and Windows NSIS/MSI artifacts.
 - Verify tray show/quit, close/minimize behavior and global shortcut conflicts.
-- Grant/deny notification permission and confirm companion-only notifications.
+- Grant/deny notification permission and confirm companion-only notifications, including redacted lock-screen content.
 - Enable/disable autostart and inspect the OS registration.
+- Run Privacy Mode local wipe and confirm `preferences.json` is cleared while account/server data remains intact.
 - Confirm the release remote capability applies only to the configured first-party origin.
 - Confirm official links open in the system browser and arbitrary URLs are rejected.
 - Sign packages and test updater/distribution policy if an updater is introduced later.

@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   contactInputSchema,
   defaultSettings,
+  effectiveNotificationRedaction,
   filterContacts,
+  localPreferencePersistence,
+  mergeSettings,
   officialWebCapabilities,
   settingsSchema,
 } from './index';
@@ -32,6 +35,37 @@ describe('validated local data', () => {
         desktop: { ...defaultSettings.desktop, token: 'never' },
       }).success,
     ).toBe(false);
+  });
+  it('defaults privacy settings for older stored preferences without resetting them', () => {
+    const legacy = structuredClone(defaultSettings) as Record<string, unknown>;
+    delete legacy.privacy;
+    legacy.theme = 'light';
+    const parsed = settingsSchema.parse(legacy);
+    expect(parsed.privacy).toEqual({ enabled: false, redactNotifications: true });
+    expect(parsed.theme).toBe('light');
+    const merged = mergeSettings(legacy);
+    expect(merged.theme).toBe('light');
+    expect(merged.privacy.enabled).toBe(false);
+    expect(
+      settingsSchema.safeParse({
+        ...defaultSettings,
+        privacy: { ...defaultSettings.privacy, fingerprint: 'never' },
+      }).success,
+    ).toBe(false);
+  });
+  it('derives Privacy Mode protections from explicit settings', () => {
+    const strict = mergeSettings({
+      ...defaultSettings,
+      privacy: { enabled: true, redactNotifications: false },
+    });
+    expect(effectiveNotificationRedaction(strict)).toBe(true);
+    expect(localPreferencePersistence(strict)).toBe(false);
+    const explicit = mergeSettings({
+      ...defaultSettings,
+      privacy: { enabled: false, redactNotifications: false },
+    });
+    expect(effectiveNotificationRedaction(explicit)).toBe(false);
+    expect(localPreferencePersistence(explicit)).toBe(true);
   });
   it('searches local contacts without inventing Snapchat data', () => {
     const c = {

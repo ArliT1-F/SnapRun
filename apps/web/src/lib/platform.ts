@@ -1,5 +1,8 @@
-import type { Settings } from '@snaprun/shared';
+import { localPreferencePersistence, type Settings } from '@snaprun/shared';
+import { systemNotificationPayload } from './privacy';
+
 export const isDesktop = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
 export async function openExternal(url: string) {
   const parsed = new URL(url);
   if (
@@ -20,10 +23,16 @@ export async function openExternal(url: string) {
       );
   }
 }
+
 export async function cacheDesktopSettings(settings: Settings) {
   if (!isDesktop()) return;
   const { load } = await import('@tauri-apps/plugin-store');
   const store = await load('preferences.json', { autoSave: true });
+  if (!localPreferencePersistence(settings)) {
+    await store.clear();
+    await store.save();
+    return;
+  }
   await store.set('settings', {
     theme: settings.theme,
     language: settings.language,
@@ -32,16 +41,28 @@ export async function cacheDesktopSettings(settings: Settings) {
   });
   await store.save();
 }
-export async function desktopNotify(title: string, body: string) {
+
+export async function clearDesktopPreferencesCache(): Promise<boolean> {
+  if (!isDesktop()) return false;
+  const { load } = await import('@tauri-apps/plugin-store');
+  const store = await load('preferences.json', { autoSave: false });
+  await store.clear();
+  await store.save();
+  return true;
+}
+
+export async function desktopNotify(title: string, body: string, redact = true) {
+  const payload = systemNotificationPayload(title, body, redact);
   if (isDesktop()) {
     const { isPermissionGranted, requestPermission, sendNotification } = await import(
       '@tauri-apps/plugin-notification'
     );
     if ((await isPermissionGranted()) || (await requestPermission()) === 'granted')
-      sendNotification({ title, body });
+      sendNotification(payload);
   } else if ('Notification' in window && Notification.permission === 'granted')
-    new Notification(title, { body, icon: '/favicon.svg' });
+    new Notification(payload.title, { body: payload.body, icon: '/favicon.svg' });
 }
+
 export async function requestNotificationPermission() {
   if (isDesktop()) {
     const { isPermissionGranted, requestPermission } = await import(
@@ -53,6 +74,31 @@ export async function requestNotificationPermission() {
     throw new Error('This browser does not support system notifications.');
   return (await Notification.requestPermission()) === 'granted';
 }
+
+export type PermissionState = 'granted' | 'denied' | 'default' | 'unsupported' | 'unknown';
+export async function notificationPermissionState(): Promise<PermissionState> {
+  try {
+    if (isDesktop()) {
+      const { isPermissionGranted } = await import('@tauri-apps/plugin-notification');
+      return (await isPermissionGranted()) ? 'granted' : 'default';
+    }
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+    return Notification.permission;
+  } catch {
+    return 'unknown';
+  }
+}
+
+export async function desktopAutostartEnabled(): Promise<boolean | null> {
+  if (!isDesktop()) return null;
+  try {
+    const { isEnabled } = await import('@tauri-apps/plugin-autostart');
+    return await isEnabled();
+  } catch {
+    return null;
+  }
+}
+
 let registeredShortcut: string | undefined;
 export async function applyDesktopBehavior(settings: Settings) {
   if (!isDesktop()) return;
@@ -76,4 +122,14 @@ export async function applyDesktopBehavior(settings: Settings) {
     }
   });
   registeredShortcut = settings.desktop.globalShortcut;
+}
+
+export async function desktopShortcutRegistered(binding: string): Promise<boolean | null> {
+  if (!isDesktop()) return null;
+  try {
+    const { isRegistered } = await import('@tauri-apps/plugin-global-shortcut');
+    return await isRegistered(binding);
+  } catch {
+    return null;
+  }
 }

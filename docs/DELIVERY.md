@@ -8,6 +8,7 @@
 - Persistent PGlite development database so the preview works without an external database service.
 - Application authentication, encrypted contacts/settings/events, settings sync and WebSocket hints.
 - Official Snapchat onboarding/messaging handoff, honest capabilities and recovery guidance.
+- Privacy Mode with local-cache minimization, notification redaction, one-click local wipe and a Settings data/permissions audit.
 - Tauri 2 desktop source, generated native icons, scoped capabilities, tray/notification/shortcut/autostart integration.
 - Linux/Windows packaging script and GitHub Actions workflow.
 - Environment example, Dockerfile, PostgreSQL compose service and installation/architecture documentation.

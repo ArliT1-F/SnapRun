@@ -42,6 +42,13 @@ export const settingsSchema = z
         globalShortcut: z.string().min(3).max(48),
       })
       .strict(),
+    privacy: z
+      .object({
+        enabled: z.boolean().default(false),
+        redactNotifications: z.boolean().default(true),
+      })
+      .strict()
+      .default({ enabled: false, redactNotifications: true }),
     labels: z
       .array(labelSchema)
       .max(40)
@@ -72,8 +79,15 @@ export const defaultSettings: Settings = {
     closeToTray: true,
     globalShortcut: 'CommandOrControl+Shift+S',
   },
+  privacy: { enabled: false, redactNotifications: true },
   labels: [],
 };
+export function effectiveNotificationRedaction(settings: Settings): boolean {
+  return settings.privacy.enabled || settings.privacy.redactNotifications;
+}
+export function localPreferencePersistence(settings: Settings): boolean {
+  return !settings.privacy.enabled;
+}
 export const contactInputSchema = z
   .object({
     displayName: z.string().trim().min(1).max(80),

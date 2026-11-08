@@ -47,6 +47,7 @@ import {
   PageHeader,
   Switch,
 } from '../components/ui';
+import { PrivacyAudit } from '../components/PrivacyAudit';
 const tabs = [
   { id: 'appearance', name: 'Appearance', icon: Palette },
   { id: 'language', name: 'Language', icon: Globe },
@@ -319,6 +320,7 @@ export function Settings() {
     setHandoffPurpose,
     logout,
     deleteAccount,
+    wipeThisDevice,
     syncState,
   } = workspace;
   const [params, setParams] = useSearchParams();
@@ -326,6 +328,9 @@ export function Settings() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [wipeOpen, setWipeOpen] = useState(false);
+  const [wipeBusy, setWipeBusy] = useState(false);
+  const [wipeError, setWipeError] = useState('');
   const [permissionBusy, setPermissionBusy] = useState(false);
   const desktop = isDesktop();
   const run = async (fn: () => Promise<unknown>) => {
@@ -417,6 +422,35 @@ export function Settings() {
       setBusy(false);
     }
   };
+  const setPrivacyMode = (enabled: boolean) =>
+    void run(async () => {
+      await updateSettings((s) => ({
+        ...s,
+        privacy: {
+          enabled,
+          redactNotifications: enabled ? true : s.privacy.redactNotifications,
+        },
+      }));
+    });
+  const setNotificationRedaction = (enabled: boolean) =>
+    void run(async () => {
+      await updateSettings((s) => ({
+        ...s,
+        privacy: { ...s.privacy, redactNotifications: enabled },
+      }));
+    });
+  const confirmWipe = async () => {
+    setWipeBusy(true);
+    setWipeError('');
+    try {
+      await wipeThisDevice();
+      setWipeOpen(false);
+    } catch (e) {
+      setWipeError(errorMessage(e));
+    } finally {
+      setWipeBusy(false);
+    }
+  };
   return (
     <div className="page-enter">
       <PageHeader
@@ -430,7 +464,9 @@ export function Settings() {
               ? syncState === 'saving'
                 ? 'Saving…'
                 : 'Account-backed preferences'
-              : 'Saved on this device'}
+              : settings.privacy.enabled
+                ? 'Session-only preferences'
+                : 'Saved on this device'}
           </Badge>
         }
       />
@@ -743,6 +779,52 @@ export function Settings() {
                   </p>
                 </div>
               </div>
+              <div className={`privacy-mode-card ${settings.privacy.enabled ? 'enabled' : ''}`}>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3>Privacy Mode</h3>
+                    {settings.privacy.enabled && <Badge tone="green">On</Badge>}
+                  </div>
+                  <p>
+                    Keep preferences out of local caches, redact system notifications and wipe this
+                    device’s SnapRun data on demand. Guest contacts remain session-only.
+                  </p>
+                  <p className="fine-print">
+                    This is data minimization, not anonymity: Snapchat still sees your real device,
+                    and Privacy Mode cannot bypass Snapchat security checks.
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.privacy.enabled}
+                  onChange={setPrivacyMode}
+                  label="Privacy Mode"
+                />
+              </div>
+              <SettingRow
+                title="Redact system notifications"
+                description={
+                  settings.privacy.enabled
+                    ? 'Always on in Privacy Mode. Lock-screen and system notifications show a generic SnapRun update instead of contact or activity details.'
+                    : 'Replace contact names and activity details in system/lock-screen notifications with a generic SnapRun update.'
+                }
+              >
+                <Switch
+                  checked={settings.privacy.enabled || settings.privacy.redactNotifications}
+                  onChange={setNotificationRedaction}
+                  label="Redact system notifications"
+                  disabled={settings.privacy.enabled}
+                />
+              </SettingRow>
+              <SettingRow
+                title="Wipe local data"
+                description="Remove SnapRun browser storage and desktop preference caches, sign out on this device and continue as a session-only guest. Your server account and Snapchat account are not deleted."
+              >
+                <Button variant="secondary" onClick={() => setWipeOpen(true)}>
+                  <Trash2 size={15} />
+                  Wipe local data
+                </Button>
+              </SettingRow>
+              <PrivacyAudit />
               <SettingRow
                 title="Encrypted companion data"
                 description="Signed-in contacts, notes, labels, preferences and activity payloads use authenticated AES-256-GCM encryption before database storage."
@@ -888,6 +970,35 @@ export function Settings() {
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+      {wipeOpen && (
+        <Modal
+          title="Wipe SnapRun data on this device?"
+          description="This clears local SnapRun storage, signs out this device and resets the workspace to a session-only guest. Your companion account data on the server and your Snapchat account are unchanged."
+          onClose={() => !wipeBusy && setWipeOpen(false)}
+        >
+          <div className="info-note">
+            <ShieldCheck size={17} />
+            <span>
+              If the server cannot be reached, the local wipe still runs, but SnapRun cannot revoke
+              the HttpOnly session cookie. Reconnect and sign out again to finish revoking this
+              device’s server session.
+            </span>
+          </div>
+          {wipeError && (
+            <p className="form-error" role="alert">
+              {wipeError}
+            </p>
+          )}
+          <div className="modal-actions">
+            <Button variant="secondary" onClick={() => setWipeOpen(false)} disabled={wipeBusy}>
+              Keep local data
+            </Button>
+            <Button variant="danger" onClick={() => void confirmWipe()} loading={wipeBusy}>
+              Wipe this device
+            </Button>
+          </div>
         </Modal>
       )}
     </div>

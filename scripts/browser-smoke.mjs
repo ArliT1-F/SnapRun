@@ -18,6 +18,7 @@ await page.addInitScript(() => {
 });
 const email = `smoke-${Date.now()}@example.test`;
 const password = 'browser-smoke-companion-password';
+let accountCreated = false;
 let signedIn = false;
 const button = (name) => page.getByRole('button', { name, exact: true });
 const waitForText = async (text) =>
@@ -61,6 +62,7 @@ try {
   await page.getByLabel('Companion password', { exact: true }).fill(password);
   await button('Create companion account').click();
   await page.locator('dialog').waitFor({ state: 'detached' });
+  accountCreated = true;
   signedIn = true;
   await waitForText('Good company starts here.');
   await page.getByRole('link', { name: 'Settings', exact: true }).click();
@@ -82,6 +84,38 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await waitForText('Synced Contact');
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'light');
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await button('Privacy & security').click();
+  await page.getByRole('switch', { name: 'Privacy Mode', exact: true }).click();
+  await page.getByRole('switch', { name: 'Privacy Mode', exact: true }).waitFor();
+  assert.equal(
+    await page
+      .getByRole('switch', { name: 'Privacy Mode', exact: true })
+      .getAttribute('aria-checked'),
+    'true',
+  );
+  assert.equal(
+    await page.evaluate(() => localStorage.getItem('snaprun.preferences')),
+    null,
+    'Privacy Mode must remove the local preference cache',
+  );
+  await button('Wipe local data').click();
+  await page
+    .locator('dialog')
+    .getByRole('button', { name: 'Wipe this device', exact: true })
+    .click();
+  await page.locator('dialog').waitFor({ state: 'detached' });
+  signedIn = false;
+  assert.equal(await page.evaluate(() => localStorage.getItem('snaprun.preferences')), null);
+  await waitForText('Session-only preferences');
+  const relogin = await page.request.post(`${base}/api/auth/login`, {
+    headers: { Origin: base },
+    data: { email, password },
+  });
+  assert.equal(relogin.ok(), true, 'Smoke account must remain deletable after local wipe');
+  signedIn = true;
+  await page.reload({ waitUntil: 'networkidle' });
+  assert.equal(await page.evaluate(() => localStorage.getItem('snaprun.preferences')), null);
   await page
     .getByRole('link', { name: /Notifications/ })
     .first()
@@ -116,13 +150,19 @@ try {
   );
   assert.deepEqual(errors, [], 'No uncaught browser errors');
   console.log(
-    'Browser smoke passed: onboarding, guest contacts, registration, labels, themes, persistence, notifications, honest handoff, command search and mobile layout.',
+    'Browser smoke passed: onboarding, guest contacts, registration, labels, themes, persistence, Privacy Mode, local wipe, notifications, honest handoff, command search and mobile layout.',
   );
 } finally {
-  if (signedIn)
+  if (accountCreated) {
+    if (!signedIn)
+      await page.request.post(`${base}/api/auth/login`, {
+        headers: { Origin: base },
+        data: { email, password },
+      });
     await page.request.delete(`${base}/api/account`, {
       headers: { Origin: base },
       data: { password, confirmation: 'DELETE' },
     });
+  }
   await browser.close();
 }
