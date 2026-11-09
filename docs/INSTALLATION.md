@@ -3,7 +3,7 @@
 ## Local development
 
 1. Install Node.js 22.12 or newer.
-2. Run `npm ci` from the repository root.
+2. Run `npm ci --include=dev` from the repository root (the root `dev`, `build`, `test` and `typecheck` scripts also run `scripts/ensure-deps.mjs` automatically if `node_modules` or `devDependencies` such as `tsc` and `concurrently` are missing).
 3. Run `npm run dev`.
 4. Open `http://localhost:5173`.
 
